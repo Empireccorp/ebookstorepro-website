@@ -1,0 +1,213 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DATABASE_DIRECT_URL")
+}
+
+model ThemeConfig {
+  id                String   @id @default(uuid())
+  primaryColor      String   @default("#3B82F6") @map("primary_color")  // blue-500
+  secondaryColor    String   @default("#8B5CF6") @map("secondary_color")  // purple-500
+  accentColor       String   @default("#10B981") @map("accent_color")  // green-500
+  backgroundColor   String   @default("#F9FAFB") @map("background_color")  // gray-50
+  textColor         String   @default("#111827") @map("text_color")  // gray-900
+  fontFamily        String   @default("moderna") @map("font_family")  // moderna, serif, clean
+  borderRadiusStyle String   @default("suave") @map("border_radius_style")  // retangular, suave, arredondado
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("theme_config")
+}
+
+model Admin {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String   // hashed
+  name          String
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("admins")
+}
+
+model Category {
+  id            String   @id @default(uuid())
+  slug          String   @unique
+  name          String
+  description   String?
+  order         Int      @default(0)
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  ebooks        Ebook[]
+
+  @@map("categories")
+}
+
+model Ebook {
+  id                String   @id @default(uuid())
+  slug              String   @unique
+  title             String
+  titleEn           String?  @map("title_en")
+  subtitle          String?
+  categoryId        String?  @map("category_id")
+  shortDescription  String   @map("short_description")
+  longDescription   String?  @map("long_description")
+  priceDisplay      Decimal  @map("price_display") @db.Decimal(10, 2)
+  currency          String   @default("BRL")
+  stripePriceId     String?  @map("stripe_price_id")
+  coverUrl          String?  @map("cover_url")
+  pdfUrl            String?  @map("pdf_url")
+  language          String   @default("pt-BR")
+  isActive          Boolean  @default(true) @map("is_active")
+  isComingSoon      Boolean  @default(false) @map("is_coming_soon")
+  
+  // Campos da Página de Vendas
+  salesHeroTitle        String?  @map("sales_hero_title")
+  salesHeroSubtitle     String?  @map("sales_hero_subtitle")
+  salesShortDescription String?  @map("sales_short_description")
+  salesBullet1          String?  @map("sales_bullet_1")
+  salesBullet2          String?  @map("sales_bullet_2")
+  salesBullet3          String?  @map("sales_bullet_3")
+  salesBullet4          String?  @map("sales_bullet_4")
+  salesBullet5          String?  @map("sales_bullet_5")
+  salesBody             String?  @map("sales_body") @db.Text
+  ctaLabel              String?  @map("cta_label")
+  
+  // Mídia da Página de Vendas
+  heroImageUrl      String?  @map("hero_image_url")
+  extraImage1Url    String?  @map("extra_image_1_url")
+  extraImage2Url    String?  @map("extra_image_2_url")
+  extraImage3Url    String?  @map("extra_image_3_url")
+  videoUrl          String?  @map("video_url")
+  
+  // Personalização Visual (BLOCO 10D)
+  layoutVariant         String?  @default("padrao") @map("layout_variant")  // padrao, video-destaque, imagem-destaque
+  highlightStyle        String?  @default("limpo") @map("highlight_style")  // limpo, cartao, dark, bright
+  badgeText             String?  @map("badge_text")  // Ex: "Novo", "Mais vendido", "Em breve"
+  showBenefitsSection   Boolean  @default(true) @map("show_benefits_section")
+  showWhatYouGetSection Boolean  @default(true) @map("show_what_you_get_section")
+  showFaqSection        Boolean  @default(false) @map("show_faq_section")
+  showGuaranteeSection  Boolean  @default(false) @map("show_guarantee_section")
+  showAuthorSection     Boolean  @default(false) @map("show_author_section")
+  
+  // FAQ
+  faqQuestion1      String?  @map("faq_question_1")
+  faqAnswer1        String?  @map("faq_answer_1") @db.Text
+  faqQuestion2      String?  @map("faq_question_2")
+  faqAnswer2        String?  @map("faq_answer_2") @db.Text
+  faqQuestion3      String?  @map("faq_question_3")
+  faqAnswer3        String?  @map("faq_answer_3") @db.Text
+  
+  // Garantia
+  guaranteeText     String?  @map("guarantee_text") @db.Text
+  
+  // Autor
+  authorName        String?  @map("author_name")
+  authorBio         String?  @map("author_bio") @db.Text
+  authorPhotoUrl    String?  @map("author_photo_url")
+  
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  category          Category? @relation(fields: [categoryId], references: [id])
+  orders            Order[]
+  downloads         Download[]
+
+  @@map("ebooks")
+}
+
+model Affiliate {
+  id                String   @id @default(uuid())
+  name              String
+  email             String   @unique
+  code              String   @unique  // Código único do afiliado (ex: JOAO123)
+  commissionPercent Decimal  @map("commission_percent") @db.Decimal(5, 2)  // Ex: 30.00 para 30%
+  status            String   @default("active")  // active, inactive
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  orders            Order[]
+  payouts           AffiliatePayout[]
+
+  @@map("affiliates")
+}
+
+model AffiliatePayout {
+  id            String    @id @default(uuid())
+  affiliateId   String    @map("affiliate_id")
+  totalAmount   Decimal   @map("total_amount") @db.Decimal(10, 2)
+  periodStart   DateTime? @map("period_start")
+  periodEnd     DateTime? @map("period_end")
+  notes         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  paidAt        DateTime  @default(now()) @map("paid_at")
+
+  affiliate     Affiliate @relation(fields: [affiliateId], references: [id])
+  orders        Order[]
+
+  @@map("affiliate_payouts")
+}
+
+model Order {
+  id                              String    @id @default(uuid())
+  email                           String
+  ebookId                         String    @map("ebook_id")
+  amount                          Decimal   @db.Decimal(10, 2)
+  currency                        String    @default("BRL")
+  status                          String    // paid, pending, failed, refunded
+  stripePaymentIntentId           String?   @map("stripe_payment_intent_id")
+  stripeCheckoutSessionId         String    @unique @map("stripe_checkout_session_id")
+  
+  // Campos de afiliado
+  affiliateCode                   String?   @map("affiliate_code")
+  affiliateId                     String?   @map("affiliate_id")
+  affiliateCommissionAmount       Decimal?  @map("affiliate_commission_amount") @db.Decimal(10, 2)
+  affiliateCommissionStatus       String?   @default("pending") @map("affiliate_commission_status")  // pending, paid
+  affiliateCommissionPaidAt       DateTime? @map("affiliate_commission_paid_at")
+  affiliatePayoutId               String?   @map("affiliate_payout_id")
+  
+  createdAt                       DateTime  @default(now()) @map("created_at")
+  updatedAt                       DateTime  @updatedAt @map("updated_at")
+
+  ebook                           Ebook     @relation(fields: [ebookId], references: [id])
+  affiliate                       Affiliate? @relation(fields: [affiliateId], references: [id])
+  affiliatePayout                 AffiliatePayout? @relation(fields: [affiliatePayoutId], references: [id])
+  downloads                       Download[]
+
+  @@map("orders")
+}
+
+model Download {
+  id              String   @id @default(uuid())
+  orderId         String   @map("order_id")
+  ebookId         String   @map("ebook_id")
+  downloadToken   String   @unique @map("download_token")
+  expiresAt       DateTime @map("expires_at")
+  downloadCount   Int      @default(0) @map("download_count")
+  maxDownloads    Int      @default(3) @map("max_downloads")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  order           Order    @relation(fields: [orderId], references: [id])
+  ebook           Ebook    @relation(fields: [ebookId], references: [id])
+
+  @@map("downloads")
+}
+
+model SystemConfig {
+  id            String   @id @default(uuid())
+  key           String   @unique
+  value         String
+  description   String?
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("system_config")
+}
